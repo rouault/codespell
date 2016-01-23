@@ -543,7 +543,7 @@ def main(*args):
                         continue
                     if not os.path.getsize(fname):
                         continue
-                    if glob_match.match(file):
+                    if glob_match.match(file) or glob_match.match(fname):
                         continue
                     parse_file(fname, colors, summary)
 
