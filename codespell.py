@@ -29,6 +29,8 @@ USAGE = """
 """
 VERSION = '1.8'
 
+words_white_list = []
+
 misspellings = {}
 exclude_lines = set()
 options = None
@@ -234,6 +236,10 @@ def parse_options(args):
                       help='FILE with lines that should not be changed',
                       metavar='FILE')
 
+    parser.add_option('--words-white-list',
+                      help='Comma-separated list of words (case sensitive) to accept, '
+                           'despite being present in the dictionary with another case')
+
     parser.add_option('-i', '--interactive',
                       action='store', type='int', default=0,
                       help='Set interactive mode when writing changes. '
@@ -421,7 +427,7 @@ def parse_file(filename, colors, summary):
 
         for word in rx.findall(line):
             lword = word.lower()
-            if lword in misspellings:
+            if lword in misspellings and word not in words_white_list:
                 fix = misspellings[lword].fix
                 fixword = fix_case(word, misspellings[lword].data)
 
@@ -500,6 +506,7 @@ def main(*args):
     global options
     global quiet_level
     global file_opener
+    global words_white_list
 
     (options, args) = parse_options(args)
 
@@ -518,6 +525,9 @@ def main(*args):
 
     if options.quiet_level:
         quiet_level = options.quiet_level
+
+    if options.words_white_list:
+        words_white_list = options.words_white_list.split(',')
 
     file_opener = FileOpener(options.hard_encoding_detection)
 
