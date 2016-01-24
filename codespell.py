@@ -425,14 +425,70 @@ def parse_file(filename, colors, summary):
         fixed_words = set()
         asked_for = set()
 
-        for word in rx.findall(line):
+        for raw_word in rx.findall(line):
+
+          if raw_word in words_white_list:
+              continue
+
+          wordSeparator = ''
+
+          # camelCase composed words
+          if raw_word[0].islower() and any(filter(str.isupper, raw_word[1:])):
+
+            words = []
+            cur_word = ''
+            for ch in raw_word:
+                if ch.isupper():
+                    words.append(cur_word)
+                    cur_word = ch
+                else:
+                    cur_word += ch
+            words.append(cur_word)
+
+          # CamelCase composed words
+          elif len(raw_word) > 3 and raw_word[0].isupper() and raw_word[1].islower() and any(filter(str.isupper, raw_word[2:])):
+
+            words = []
+            cur_word = raw_word[0]
+            for ch in raw_word[1:]:
+                if ch.isupper():
+                    words.append(cur_word)
+                    cur_word = ch
+                else:
+                    cur_word += ch
+            words.append(cur_word)
+
+          # MULTI_WORD_CONSTANT
+          elif raw_word.find('_') >= 1 and not any(filter(str.islower, raw_word[1:])):
+
+            wordSeparator = '_'
+            words = []
+            cur_word = ''
+            for ch in raw_word:
+                if ch == '_':
+                    words.append(cur_word)
+                    cur_word = ''
+                else:
+                    cur_word += ch
+            words.append(cur_word)
+
+          else:
+            words = [ raw_word ]
+
+          for iWord in range(len(words)):
+            word = words[iWord]
             lword = word.lower()
-            if lword in misspellings and word not in words_white_list:
+            if lword in misspellings and word not in words_white_list and \
+               not (words[0] == 'pach' and len(words)>1) and \
+               not (lword == 'dont' and len(words)>1)  and \
+               not (lword == 'cant' and len(words)>1)  and \
+               not (lword == 'ang' and len(words)>1) :
                 fix = misspellings[lword].fix
                 fixword = fix_case(word, misspellings[lword].data)
 
                 if options.interactive and lword not in asked_for:
                     print(filename)
+                    #print(raw_word)
                     fix, fixword = ask_for_word_fix(lines[i - 1], word,
                                                     misspellings[lword],
                                                     options.interactive)
@@ -446,8 +502,10 @@ def parse_file(filename, colors, summary):
 
                 if options.write_changes and fix:
                     changed = True
-                    lines[i - 1] = re.sub(r'\b%s\b' % word,
-                                          fixword, lines[i - 1])
+                    new_words = words[0:iWord] + [fixword] + words[iWord+1:]
+                    full_fixword = wordSeparator.join(new_words)
+                    lines[i - 1] = re.sub(r'\b%s\b' % raw_word,
+                                          full_fixword, lines[i - 1])
                     fixed_words.add(word)
                     continue
 
