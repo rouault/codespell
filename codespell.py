@@ -282,7 +282,7 @@ def parse_options(args):
 def build_exclude_hashes(filename):
     with open(filename, 'r') as f:
         for line in f:
-            exclude_lines.add(line)
+            exclude_lines.add(line.strip())
 
 
 def build_dict(filename):
@@ -418,7 +418,7 @@ def parse_file(filename, colors, summary):
     i = 1
     rx = re.compile(r"[\w\-']+")
     for line in lines:
-        if line in exclude_lines:
+        if line.strip() in exclude_lines:
             i += 1
             continue
 
